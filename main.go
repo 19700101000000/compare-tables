@@ -1,42 +1,71 @@
 package main
 
 import (
+	"compare-tables/filename"
+	"compare-tables/queries"
+	my "compare-tables/yaml"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 
-	"github.com/go-yaml/yaml"
+	"gopkg.in/yaml.v2"
 )
-
-const (
-	envYml = "env.yml"
-)
-
-type Info struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
-	User string `yaml:"username"`
-	Pass string `yaml:"password"`
-	DB   string `yaml:"database"`
-}
-
-type Env struct {
-	Psql Info `yaml:"psql"`
-}
 
 func main() {
-	buf, err := ioutil.ReadFile(envYml)
+	defer func() {
+		if r := recover(); r != nil {
+			log.Fatalln(r)
+		}
+	}()
+
+	env := readEnv()
+
+	readFile()
+
+	queries.GetSrcName(env)
+}
+
+func readEnv() my.Env {
+	buf, err := ioutil.ReadFile(filename.Env)
 	if err != nil {
-		log.Fatalf("cannot readfile %s: %v", envYml, err)
+		log.Fatalf("cannot readfile %s: %v", filename.Env, err)
 	}
 
-	var env Env
+	var env my.Env
 	err = yaml.Unmarshal(buf, &env)
 	if err != nil {
-		log.Fatalf("cannot unmarshal %s: %v", envYml, err)
+		panic(
+			fmt.Sprintf("cannot unmarshal %s: %v", filename.Env, err),
+		)
+	}
+	log.Printf("open file: %s\n", filename.Env)
+
+	return env
+}
+
+func readFile() []my.Table {
+	if len(os.Args) < 2 {
+		panic(
+			fmt.Sprintf("please set filename"),
+		)
+	}
+	tgt := os.Args[1]
+	buf, err := ioutil.ReadFile(tgt)
+	if err != nil {
+		panic(
+			fmt.Sprintf("cannot readfile %s: %v", filename.Env, err),
+		)
 	}
 
-	fmt.Printf("%#v\n", env)
+	var tables []my.Table
+	err = yaml.Unmarshal(buf, &tables)
+	if err != nil {
+		panic(
+			fmt.Sprintf("cannot unmarshal %s: %v", tgt, err),
+		)
+	}
+	log.Printf("open file: %s\n", tgt)
 
-	fmt.Println("hello, world")
+	return tables
 }

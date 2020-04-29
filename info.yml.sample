@@ -1,0 +1,13 @@
+- table: foo:bar
+  columns:
+    - target: aa:aaa
+    - target: bb:bbb
+    - target: cc
+  join_on:
+    - and: foo.id = bar.id
+    - or: foo.name = bar.name
+  where:
+    - and: foo.id < 100
+- table: fizz
+  columns:
+    - target: buzz
