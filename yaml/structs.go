@@ -23,8 +23,8 @@ type Column struct {
 
 // Table any.yml's struct
 type Table struct {
-	Table   string      `yaml:"table"`
-	Columns []Column    `yaml:"columns"`
-	JoinOn  []Condition `yaml:"join_on"`
-	Where   []Condition `yaml:"where"`
+	Table   string       `yaml:"table"`
+	Columns []*Column    `yaml:"columns"`
+	JoinOn  []*Condition `yaml:"join_on"`
+	Where   []*Condition `yaml:"where"`
 }

@@ -7,7 +7,7 @@ compare 2 tables
 
 ### env.yml
 ```
-driver: mysql | posgres
+driver: mysql | postgres
 host: <HOST_NAME>
 port: <PORT_NUMBER>
 username: <USER_NAME>

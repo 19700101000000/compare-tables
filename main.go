@@ -21,9 +21,13 @@ func main() {
 
 	env := readEnv()
 
-	readFile()
+	data := readFile()
 
-	queries.GetSrcName(env)
+	ins := queries.GetInstance(env)
+	defer ins.Close()
+
+	ins.Init(data)
+	ins.RunCompare()
 }
 
 func readEnv() my.Env {
@@ -44,7 +48,7 @@ func readEnv() my.Env {
 	return env
 }
 
-func readFile() []my.Table {
+func readFile() []*my.Table {
 	if len(os.Args) < 2 {
 		panic(
 			fmt.Sprintf("please set filename"),
@@ -58,7 +62,7 @@ func readFile() []my.Table {
 		)
 	}
 
-	var tables []my.Table
+	var tables []*my.Table
 	err = yaml.Unmarshal(buf, &tables)
 	if err != nil {
 		panic(
