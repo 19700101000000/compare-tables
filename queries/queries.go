@@ -164,4 +164,34 @@ func (ins *Instance) getInnerJoin(i int) {
 		data = append(data, results)
 	}
 	fmt.Printf("\t[COUNT]: %d\n", len(data))
+
+	fmt.Println("inner join column match all")
+	for _, v := range table.Columns {
+		if 0 < len(table.Where.Origin) {
+			sql += " AND "
+		}
+		sql += fmt.Sprintf("%s.%s = %s.%s", table.Origin, v.Origin, table.Diff, v.Diff)
+	}
+	fmt.Printf("\t[SQL]: %s\n", sql)
+
+	rows, err = ins.DB.Query(sql)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+	data = [][]string{}
+
+	for rows.Next() {
+		results := make([]string, len(cols))
+		pipe := make([]interface{}, len(cols))
+		for i := range results {
+			pipe[i] = &results[i]
+		}
+		err = rows.Scan(pipe...)
+		if err != nil {
+			panic(err)
+		}
+		data = append(data, results)
+	}
+	fmt.Printf("\t[COUNT]: %d\n", len(data))
 }
