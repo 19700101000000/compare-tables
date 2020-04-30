@@ -1,0 +1,8 @@
+version: '3'
+services:
+  godev:
+    build: .
+    tty: true
+    volumes:
+      - ./:/go/src/work
+
