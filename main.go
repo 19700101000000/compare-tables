@@ -28,6 +28,7 @@ func main() {
 
 	ins.Init(data)
 	ins.RunCompare()
+	log.Println("done")
 }
 
 func readEnv() my.Env {

@@ -87,8 +87,7 @@ func (ins *Instance) getCountOrigin(i int) int {
 		panic(err)
 	}
 	fmt.Printf(
-		"\t[COUNT] %s: %d\n",
-		table.Origin,
+		"\t[COUNT]: %d\n",
 		count,
 	)
 	return count
@@ -114,8 +113,7 @@ func (ins *Instance) getCountDiff(i int) int {
 		panic(err)
 	}
 	fmt.Printf(
-		"\t[COUNT] %s: %d\n",
-		table.Diff,
+		"\t[COUNT]: %d\n",
 		count,
 	)
 	return count
@@ -134,7 +132,7 @@ func (ins *Instance) getInnerJoin(i int) {
 		cols[i+1] = fmt.Sprintf("%s.%s", table.Diff, col.Diff)
 	}
 
-	sql := fmt.Sprintf(
+	strSql := fmt.Sprintf(
 		"SELECT %s FROM %s INNER JOIN %s ON %s WHERE %s",
 		strings.Join(cols, ", "),
 		table.Origin,
@@ -142,17 +140,17 @@ func (ins *Instance) getInnerJoin(i int) {
 		table.JoinOn.Origin,
 		table.Where.Origin,
 	)
-	fmt.Printf("\t[SQL]: %s\n", sql)
+	fmt.Printf("\t[SQL]: %s\n", strSql)
 
-	rows, err := ins.DB.Query(sql)
+	rows, err := ins.DB.Query(strSql)
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
-	data := [][]string{}
+	data := [][]sql.NullString{}
 
 	for rows.Next() {
-		results := make([]string, len(cols))
+		results := make([]sql.NullString, len(cols))
 		pipe := make([]interface{}, len(cols))
 		for i := range results {
 			pipe[i] = &results[i]
@@ -168,21 +166,29 @@ func (ins *Instance) getInnerJoin(i int) {
 	fmt.Println("inner join column match all")
 	for _, v := range table.Columns {
 		if 0 < len(table.Where.Origin) {
-			sql += " AND "
+			strSql += " AND "
 		}
-		sql += fmt.Sprintf("%s.%s = %s.%s", table.Origin, v.Origin, table.Diff, v.Diff)
+		origin := fmt.Sprintf("%s.%s", table.Origin, v.Origin)
+		diff := fmt.Sprintf("%s.%s", table.Diff, v.Diff)
+		strSql += fmt.Sprintf(
+			"((%s IS NULL AND %s IS NULL) OR %s = %s)",
+			origin,
+			diff,
+			origin,
+			diff,
+		)
 	}
-	fmt.Printf("\t[SQL]: %s\n", sql)
+	fmt.Printf("\t[SQL]: %s\n", strSql)
 
-	rows, err = ins.DB.Query(sql)
+	rows, err = ins.DB.Query(strSql)
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
-	data = [][]string{}
+	data = [][]sql.NullString{}
 
 	for rows.Next() {
-		results := make([]string, len(cols))
+		results := make([]sql.NullString, len(cols))
 		pipe := make([]interface{}, len(cols))
 		for i := range results {
 			pipe[i] = &results[i]
