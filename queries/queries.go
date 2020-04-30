@@ -59,12 +59,32 @@ func (ins *Instance) Init(data []*my.Table) {
 
 // RunCompare do compare
 func (ins *Instance) RunCompare() {
+	matchAll, result := true, ""
+
 	for i, v := range ins.Data {
 		fmt.Printf("---- %s : %s ----\n", v.Origin, v.Diff)
-		ins.getCountOrigin(i)
-		ins.getCountDiff(i)
-		ins.getInnerJoin(i)
+		cntOrigin := ins.getCountOrigin(i)
+		cntDiff := ins.getCountDiff(i)
+		joinData := ins.getInnerJoin(i)
+		cntJoin := len(joinData)
+		matchAllData := ins.getInnerJoinAll(i)
+		cntMatchAll := len(matchAllData)
+		isMatch := cntOrigin > 0 && cntDiff > 0 && cntJoin > 0 && cntMatchAll > 0
+		result += fmt.Sprintf(
+			"%s=%s : %v\n",
+			v.Origin,
+			v.Diff,
+			isMatch,
+		)
+		if matchAll {
+			matchAll = isMatch
+		}
 	}
+	result += fmt.Sprintf(
+		"match all : %v\n",
+		matchAll,
+	)
+	fmt.Print("---- Result ----\n", result)
 }
 
 func (ins *Instance) getCountOrigin(i int) int {
@@ -119,7 +139,7 @@ func (ins *Instance) getCountDiff(i int) int {
 	return count
 }
 
-func (ins *Instance) getInnerJoin(i int) {
+func (ins *Instance) getInnerJoin(i int) [][]sql.NullString {
 	table := ins.Data[i]
 	fmt.Println("inner join")
 
@@ -162,8 +182,31 @@ func (ins *Instance) getInnerJoin(i int) {
 		data = append(data, results)
 	}
 	fmt.Printf("\t[COUNT]: %d\n", len(data))
+	return data
+}
 
+func (ins *Instance) getInnerJoinAll(i int) [][]sql.NullString {
+	table := ins.Data[i]
 	fmt.Println("inner join column match all")
+
+	cols := make([]string, len(table.Columns)*2)
+	for i := range table.Columns {
+		col := table.Columns[i]
+
+		i *= 2
+		cols[i] = fmt.Sprintf("%s.%s", table.Origin, col.Origin)
+		cols[i+1] = fmt.Sprintf("%s.%s", table.Diff, col.Diff)
+	}
+
+	strSql := fmt.Sprintf(
+		"SELECT %s FROM %s INNER JOIN %s ON %s WHERE %s",
+		strings.Join(cols, ", "),
+		table.Origin,
+		table.Diff,
+		table.JoinOn.Origin,
+		table.Where.Origin,
+	)
+
 	for _, v := range table.Columns {
 		if 0 < len(table.Where.Origin) {
 			strSql += " AND "
@@ -180,12 +223,12 @@ func (ins *Instance) getInnerJoin(i int) {
 	}
 	fmt.Printf("\t[SQL]: %s\n", strSql)
 
-	rows, err = ins.DB.Query(strSql)
+	rows, err := ins.DB.Query(strSql)
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
-	data = [][]sql.NullString{}
+	data := [][]sql.NullString{}
 
 	for rows.Next() {
 		results := make([]sql.NullString, len(cols))
@@ -200,4 +243,6 @@ func (ins *Instance) getInnerJoin(i int) {
 		data = append(data, results)
 	}
 	fmt.Printf("\t[COUNT]: %d\n", len(data))
+
+	return data
 }
