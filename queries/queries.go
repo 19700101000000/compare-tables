@@ -69,9 +69,9 @@ func (ins *Instance) RunCompare() {
 		cntJoin := len(joinData)
 		matchAllData := ins.getInnerJoinAll(i)
 		cntMatchAll := len(matchAllData)
-		isMatch := cntOrigin > 0 && cntDiff > 0 && cntJoin > 0 && cntMatchAll > 0
+		isMatch := cntOrigin == cntDiff && cntOrigin == cntJoin && cntOrigin == cntMatchAll
 		result += fmt.Sprintf(
-			"%s=%s : %v\n",
+			"\t[%s=%s]: %v\n",
 			v.Origin,
 			v.Diff,
 			isMatch,
@@ -81,7 +81,7 @@ func (ins *Instance) RunCompare() {
 		}
 	}
 	result += fmt.Sprintf(
-		"match all : %v\n",
+		"\t[match all]: %v\n",
 		matchAll,
 	)
 	fmt.Print("---- Result ----\n", result)
