@@ -164,3 +164,26 @@ func getData(data []*my.Table) []*Table {
 
 	return tables
 }
+
+func getInnerJoinQuery(ins *Instance, i int) string {
+	t := ins.Data[i]
+	cols := make([]string, len(t.Columns)*2)
+	for i := range t.Columns {
+		c := t.Columns[i]
+		s := "%s.%s"
+
+		i *= 2
+		cols[i] = fmt.Sprintf(s, t.Origin, c.Origin)
+		cols[i+1] = fmt.Sprintf(s, t.Diff, c.Diff)
+	}
+
+	q := fmt.Sprintf(
+		"SELECT %s FROM %s INNER JOIN %s ON %s WHERE %s",
+		strings.Join(cols, ", "),
+		t.Origin,
+		t.Diff,
+		t.JoinOn.Origin,
+		t.Where.Origin,
+	)
+	return q
+}

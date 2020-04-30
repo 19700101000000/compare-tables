@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"strings"
 
 	// sql drivers
 	_ "github.com/go-sql-driver/mysql"
@@ -16,6 +15,13 @@ import (
 const (
 	driverPsql  = "postgres"
 	driverMysql = "mysql"
+)
+
+// tag heads
+const (
+	tagSQL = "[SQL]"
+	tagCnt = "[CNT]"
+	tagAll = "[ALL]"
 )
 
 // Instance struct
@@ -59,190 +65,132 @@ func (ins *Instance) Init(data []*my.Table) {
 
 // RunCompare do compare
 func (ins *Instance) RunCompare() {
-	matchAll, result := true, ""
+	matchAll, resultsMatch := true, ""
 
 	for i, v := range ins.Data {
-		fmt.Printf("---- %s : %s ----\n", v.Origin, v.Diff)
+		fmt.Printf("----[%s:%s]----\n", v.Origin, v.Diff)
+
 		cntOrigin := ins.getCountOrigin(i)
 		cntDiff := ins.getCountDiff(i)
 		joinData := ins.getInnerJoin(i)
+		matchData := ins.getInnerJoinWithMatch(i)
+
 		cntJoin := len(joinData)
-		matchAllData := ins.getInnerJoinAll(i)
-		cntMatchAll := len(matchAllData)
-		isMatch := cntOrigin == cntDiff && cntOrigin == cntJoin && cntOrigin == cntMatchAll
-		result += fmt.Sprintf(
-			"\t[%s=%s]: %v\n",
+		cntMatch := len(matchData)
+		isMatchAll := cntOrigin == cntDiff && cntOrigin == cntJoin && cntOrigin == cntMatch
+		resultsMatch += fmt.Sprintf(
+			"\t[%s:%s]\t%v\n",
 			v.Origin,
 			v.Diff,
-			isMatch,
+			isMatchAll,
 		)
 		if matchAll {
-			matchAll = isMatch
+			matchAll = isMatchAll
 		}
 	}
-	result += fmt.Sprintf(
-		"\t[match all]: %v\n",
-		matchAll,
-	)
-	fmt.Print("---- Result ----\n", result)
+	resultsMatch += fmt.Sprintf("\t%s\t%v\n", tagAll, matchAll)
+
+	fmt.Println("----[results]----")
+	fmt.Printf("match\n%s", resultsMatch)
 }
 
 func (ins *Instance) getCountOrigin(i int) int {
-	table := ins.Data[i]
-	fmt.Println("count", table.Origin)
+	t := ins.Data[i]
+	fmt.Println("count", t.Origin)
 
-	sql := fmt.Sprintf(
-		"SELECT COUNT(*) FROM %s WHERE %s",
-		table.Origin,
-		table.Where.Origin,
-	)
-	fmt.Printf(
-		"\t[SQL] %s: %s\n",
-		table.Origin,
-		sql,
-	)
+	q := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", t.Origin, t.Where.Origin)
+	fmt.Printf("\t%s\t%s: %s\n", tagSQL, t.Origin, q)
 
-	var count int
-	if err := ins.DB.QueryRow(sql).Scan(&count); err != nil {
+	var c int
+	if err := ins.DB.QueryRow(q).Scan(&c); err != nil {
 		panic(err)
 	}
-	fmt.Printf(
-		"\t[COUNT]: %d\n",
-		count,
-	)
-	return count
+	fmt.Printf("\t%s\t%d\n", tagCnt, c)
+	return c
 }
 
 func (ins *Instance) getCountDiff(i int) int {
-	table := ins.Data[i]
-	fmt.Println("count", table.Diff)
+	t := ins.Data[i]
+	fmt.Println("count", t.Diff)
 
-	sql := fmt.Sprintf(
-		"SELECT COUNT(*) FROM %s WHERE %s",
-		table.Diff,
-		table.Where.Diff,
-	)
-	fmt.Printf(
-		"\t[SQL] %s: %s\n",
-		table.Diff,
-		sql,
-	)
+	q := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", t.Diff, t.Where.Diff)
+	fmt.Printf("\t%s\t%s: %s\n", tagSQL, t.Diff, q)
 
-	var count int
-	if err := ins.DB.QueryRow(sql).Scan(&count); err != nil {
+	var c int
+	if err := ins.DB.QueryRow(q).Scan(&c); err != nil {
 		panic(err)
 	}
-	fmt.Printf(
-		"\t[COUNT]: %d\n",
-		count,
-	)
-	return count
+	fmt.Printf("\t%s\t%d\n", tagCnt, c)
+	return c
 }
 
 func (ins *Instance) getInnerJoin(i int) [][]sql.NullString {
-	table := ins.Data[i]
+	t := ins.Data[i]
 	fmt.Println("inner join")
 
-	cols := make([]string, len(table.Columns)*2)
-	for i := range table.Columns {
-		col := table.Columns[i]
+	q := getInnerJoinQuery(ins, i)
+	fmt.Printf("\t%s\t%s\n", tagSQL, q)
 
-		i *= 2
-		cols[i] = fmt.Sprintf("%s.%s", table.Origin, col.Origin)
-		cols[i+1] = fmt.Sprintf("%s.%s", table.Diff, col.Diff)
-	}
-
-	strSql := fmt.Sprintf(
-		"SELECT %s FROM %s INNER JOIN %s ON %s WHERE %s",
-		strings.Join(cols, ", "),
-		table.Origin,
-		table.Diff,
-		table.JoinOn.Origin,
-		table.Where.Origin,
-	)
-	fmt.Printf("\t[SQL]: %s\n", strSql)
-
-	rows, err := ins.DB.Query(strSql)
+	rows, err := ins.DB.Query(q)
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
-	data := [][]sql.NullString{}
 
+	d := [][]sql.NullString{}
 	for rows.Next() {
-		results := make([]sql.NullString, len(cols))
-		pipe := make([]interface{}, len(cols))
-		for i := range results {
-			pipe[i] = &results[i]
+		l := len(t.Columns) * 2
+		r := make([]sql.NullString, l)
+		p := make([]interface{}, l)
+		for i := range r {
+			p[i] = &r[i]
 		}
-		err = rows.Scan(pipe...)
+		err = rows.Scan(p...)
 		if err != nil {
 			panic(err)
 		}
-		data = append(data, results)
+		d = append(d, r)
 	}
-	fmt.Printf("\t[COUNT]: %d\n", len(data))
-	return data
+	fmt.Printf("\t%s\t%d\n", tagCnt, len(d))
+	return d
 }
 
-func (ins *Instance) getInnerJoinAll(i int) [][]sql.NullString {
-	table := ins.Data[i]
-	fmt.Println("inner join column match all")
+func (ins *Instance) getInnerJoinWithMatch(i int) [][]sql.NullString {
+	t := ins.Data[i]
+	fmt.Println("inner join with match")
 
-	cols := make([]string, len(table.Columns)*2)
-	for i := range table.Columns {
-		col := table.Columns[i]
-
-		i *= 2
-		cols[i] = fmt.Sprintf("%s.%s", table.Origin, col.Origin)
-		cols[i+1] = fmt.Sprintf("%s.%s", table.Diff, col.Diff)
-	}
-
-	strSql := fmt.Sprintf(
-		"SELECT %s FROM %s INNER JOIN %s ON %s WHERE %s",
-		strings.Join(cols, ", "),
-		table.Origin,
-		table.Diff,
-		table.JoinOn.Origin,
-		table.Where.Origin,
-	)
-
-	for _, v := range table.Columns {
-		if 0 < len(table.Where.Origin) {
-			strSql += " AND "
+	q := getInnerJoinQuery(ins, i)
+	for _, v := range t.Columns {
+		if 0 < len(t.Where.Origin) {
+			q += " AND "
 		}
-		origin := fmt.Sprintf("%s.%s", table.Origin, v.Origin)
-		diff := fmt.Sprintf("%s.%s", table.Diff, v.Diff)
-		strSql += fmt.Sprintf(
-			"((%s IS NULL AND %s IS NULL) OR %s = %s)",
-			origin,
-			diff,
-			origin,
-			diff,
-		)
+		s := "%s.%s"
+		o := fmt.Sprintf(s, t.Origin, v.Origin)
+		d := fmt.Sprintf(s, t.Diff, v.Diff)
+		q += fmt.Sprintf("((%s IS NULL AND %s IS NULL) OR %s = %s)", o, d, o, d)
 	}
-	fmt.Printf("\t[SQL]: %s\n", strSql)
+	fmt.Printf("\t%s\t%s\n", tagSQL, q)
 
-	rows, err := ins.DB.Query(strSql)
+	rows, err := ins.DB.Query(q)
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
-	data := [][]sql.NullString{}
 
+	d := [][]sql.NullString{}
 	for rows.Next() {
-		results := make([]sql.NullString, len(cols))
-		pipe := make([]interface{}, len(cols))
-		for i := range results {
-			pipe[i] = &results[i]
+		l := len(t.Columns) * 2
+		r := make([]sql.NullString, l)
+		p := make([]interface{}, l)
+		for i := range r {
+			p[i] = &r[i]
 		}
-		err = rows.Scan(pipe...)
+		err = rows.Scan(p...)
 		if err != nil {
 			panic(err)
 		}
-		data = append(data, results)
+		d = append(d, r)
 	}
-	fmt.Printf("\t[COUNT]: %d\n", len(data))
-
-	return data
+	fmt.Printf("\t%s\t%d\n", tagCnt, len(d))
+	return d
 }
