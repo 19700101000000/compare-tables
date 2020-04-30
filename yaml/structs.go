@@ -18,7 +18,8 @@ type Condition struct {
 
 // Column table's column
 type Column struct {
-	Target string `yaml:"target"`
+	Target       string `yaml:"target"`
+	DisableMatch bool   `yaml:"disable_match"`
 }
 
 // Table any.yml's struct

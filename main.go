@@ -55,22 +55,21 @@ func readFile() []*my.Table {
 			fmt.Sprintf("please set filename"),
 		)
 	}
-	tgt := os.Args[1]
-	buf, err := ioutil.ReadFile(tgt)
+	f := os.Args[1]
+	buf, err := ioutil.ReadFile(f)
 	if err != nil {
 		panic(
 			fmt.Sprintf("cannot readfile %s: %v", filename.Env, err),
 		)
 	}
 
-	var tables []*my.Table
-	err = yaml.Unmarshal(buf, &tables)
+	var t []*my.Table
+	err = yaml.Unmarshal(buf, &t)
 	if err != nil {
 		panic(
-			fmt.Sprintf("cannot unmarshal %s: %v", tgt, err),
+			fmt.Sprintf("cannot unmarshal %s: %v", f, err),
 		)
 	}
-	log.Printf("open file: %s\n", tgt)
-
-	return tables
+	log.Printf("open file: %s\n", f)
+	return t
 }

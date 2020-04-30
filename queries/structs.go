@@ -6,10 +6,16 @@ type Target struct {
 	Diff   string
 }
 
+// Column column info
+type Column struct {
+	Target
+	DisableMatch bool
+}
+
 // Table target table
 type Table struct {
 	Target
-	Columns []*Target
+	Columns []*Column
 	JoinOn  Target
 	Where   Target
 }

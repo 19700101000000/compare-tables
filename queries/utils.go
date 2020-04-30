@@ -43,123 +43,36 @@ func getData(data []*my.Table) []*Table {
 	tables := make([]*Table, len(data))
 	for i, v := range data {
 		sep := ":"
-		table := &Table{
-			Columns: make([]*Target, len(v.Columns)),
+		t := &Table{
+			Columns: make([]*Column, len(v.Columns)),
 		}
 
-		if t := strings.Split(v.Table, sep); 1 < len(t) {
-			table.Origin = t[0]
-			table.Diff = t[1]
+		if s := strings.Split(v.Table, sep); 1 < len(s) {
+			t.Origin = s[0]
+			t.Diff = s[1]
 		} else {
-			table.Origin = v.Table
-			table.Diff = v.Table
+			t.Origin = v.Table
+			t.Diff = v.Table
 		}
 
 		for i, v := range v.Columns {
-			column := &Target{}
-			if c := strings.Split(v.Target, sep); 1 < len(c) {
-				column.Origin = c[0]
-				column.Diff = c[1]
-			} else {
-				column.Origin = v.Target
-				column.Diff = v.Target
+			c := &Column{
+				DisableMatch: v.DisableMatch,
 			}
-			table.Columns[i] = column
+			if s := strings.Split(v.Target, sep); 1 < len(s) {
+				c.Origin = s[0]
+				c.Diff = s[1]
+			} else {
+				c.Origin = v.Target
+				c.Diff = v.Target
+			}
+			t.Columns[i] = c
 		}
 
-		for i, v := range v.JoinOn {
-			if 0 < i {
-				if 0 < len(v.And) {
-					pref := " AND "
+		getCondition(&t.JoinOn.Origin, &t.JoinOn.Diff, v.JoinOn, sep)
+		getCondition(&t.Where.Origin, &t.Where.Diff, v.Where, sep)
 
-					if a := strings.Split(v.And, sep); 1 < len(a) {
-						table.JoinOn.Origin += pref + a[0]
-						table.JoinOn.Diff += pref + a[1]
-					} else {
-						table.JoinOn.Origin += pref + v.And
-						table.JoinOn.Diff += pref + v.And
-					}
-				} else {
-					pref := " OR "
-
-					if o := strings.Split(v.Or, sep); 1 < len(o) {
-						table.JoinOn.Origin += pref + o[0]
-						table.JoinOn.Diff += pref + o[1]
-					} else {
-						table.JoinOn.Origin += pref + v.Or
-						table.JoinOn.Diff += pref + v.Or
-					}
-				}
-			} else {
-				if 0 < len(v.And) {
-
-					if a := strings.Split(v.And, sep); 1 < len(a) {
-						table.JoinOn.Origin = a[0]
-						table.JoinOn.Diff = a[1]
-					} else {
-						table.JoinOn.Origin = v.And
-						table.JoinOn.Diff = v.And
-					}
-				} else {
-
-					if o := strings.Split(v.Or, sep); 1 < len(o) {
-						table.JoinOn.Origin = o[0]
-						table.JoinOn.Diff = o[1]
-					} else {
-						table.JoinOn.Origin = v.Or
-						table.JoinOn.Diff = v.Or
-					}
-				}
-			}
-		}
-
-		for i, v := range v.Where {
-			if 0 < i {
-				if 0 < len(v.And) {
-					pref := " AND "
-
-					if a := strings.Split(v.And, sep); 1 < len(a) {
-						table.Where.Origin += pref + a[0]
-						table.Where.Diff += pref + a[1]
-					} else {
-						table.Where.Origin += pref + v.And
-						table.Where.Diff += pref + v.And
-					}
-				} else {
-					pref := " OR "
-
-					if o := strings.Split(v.Or, sep); 1 < len(o) {
-						table.Where.Origin += pref + o[0]
-						table.Where.Diff += pref + o[1]
-					} else {
-						table.Where.Origin += pref + v.Or
-						table.Where.Diff += pref + v.Or
-					}
-				}
-			} else {
-				if 0 < len(v.And) {
-
-					if a := strings.Split(v.And, sep); 1 < len(a) {
-						table.Where.Origin = a[0]
-						table.Where.Diff = a[1]
-					} else {
-						table.Where.Origin = v.And
-						table.Where.Diff = v.And
-					}
-				} else {
-
-					if o := strings.Split(v.Or, sep); 1 < len(o) {
-						table.Where.Origin = o[0]
-						table.Where.Diff = o[1]
-					} else {
-						table.Where.Origin = v.Or
-						table.Where.Diff = v.Or
-					}
-				}
-			}
-		}
-
-		tables[i] = table
+		tables[i] = t
 	}
 
 	return tables
@@ -186,4 +99,38 @@ func getInnerJoinQuery(ins *Instance, i int) string {
 		t.Where.Origin,
 	)
 	return q
+}
+
+func getCondition(origin, diff *string, c []*my.Condition, sep string) {
+	for i, v := range c {
+		isAnd := 0 < len(v.And)
+		if 0 < i {
+			var p string
+			if isAnd {
+				p = " AND "
+			} else {
+				p = " OR "
+			}
+
+			*origin += p
+			*diff += p
+		}
+
+		var o, d string
+		if isAnd {
+			if s := strings.Split(v.And, sep); 1 < len(s) {
+				o, d = s[0], s[1]
+			} else {
+				o, d = v.And, v.And
+			}
+		} else {
+			if s := strings.Split(v.Or, sep); 1 < len(s) {
+				o, d = s[0], s[1]
+			} else {
+				o, d = v.Or, v.Or
+			}
+		}
+		*origin += o
+		*diff += d
+	}
 }

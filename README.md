@@ -20,6 +20,7 @@ database: <DATABASE_NAME>
 - table: <TGT1_TABLE_NAME>:<TGT2_TABLE_NAME> | <TABLE_NAME>
   columns:
     - target: <TGT1_COLUMN_NAME>:<TGT2_COLUMN_NAME> | <COLUMN_NAME>
+      [disable_match: true | false]
   join_on:
     - and: <TGT1_JOIN_CONDITION>:<TGT2_JOIN_CONDITION> | <JOIN_CONDITION>
       | or: <TGT1_JOIN_CONDITION>:<TGT2_JOIN_CONDITION> | <JOIN_CONDITION>

@@ -161,6 +161,10 @@ func (ins *Instance) getInnerJoinWithMatch(i int) [][]sql.NullString {
 
 	q := getInnerJoinQuery(ins, i)
 	for _, v := range t.Columns {
+		if v.DisableMatch {
+			continue
+		}
+
 		if 0 < len(t.Where.Origin) {
 			q += " AND "
 		}
