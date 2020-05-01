@@ -1,5 +1,4 @@
 *.yml
 !docker-compose.yml
-compare-tables
-compare-tables.exe
+compare-tables*
 *.log
