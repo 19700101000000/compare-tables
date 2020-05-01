@@ -99,7 +99,7 @@ func (ins *Instance) getCountOrigin(i int) int {
 	fmt.Println("count", t.Origin)
 
 	q := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", t.Origin, t.Where.Origin)
-	fmt.Printf("\t%s\t%s: %s\n", tagSQL, t.Origin, q)
+	fmt.Printf("\t%s\t%s\n", tagSQL, q)
 
 	var c int
 	if err := ins.DB.QueryRow(q).Scan(&c); err != nil {
@@ -114,7 +114,7 @@ func (ins *Instance) getCountDiff(i int) int {
 	fmt.Println("count", t.Diff)
 
 	q := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", t.Diff, t.Where.Diff)
-	fmt.Printf("\t%s\t%s: %s\n", tagSQL, t.Diff, q)
+	fmt.Printf("\t%s\t%s\n", tagSQL, q)
 
 	var c int
 	if err := ins.DB.QueryRow(q).Scan(&c); err != nil {
