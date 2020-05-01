@@ -46,31 +46,18 @@ func getData(data []*my.Table) []*Table {
 		t := &Table{
 			Columns: make([]*Column, len(v.Columns)),
 		}
-
-		if s := strings.Split(v.Table, sep); 1 < len(s) {
-			t.Origin = s[0]
-			t.Diff = s[1]
-		} else {
-			t.Origin = v.Table
-			t.Diff = v.Table
-		}
+		t.Origin, t.Diff = splitWord(v.Table, sep)
 
 		for i, v := range v.Columns {
 			c := &Column{
 				DisableMatch: v.DisableMatch,
 			}
-			if s := strings.Split(v.Target, sep); 1 < len(s) {
-				c.Origin = s[0]
-				c.Diff = s[1]
-			} else {
-				c.Origin = v.Target
-				c.Diff = v.Target
-			}
+			c.Origin, c.Diff = splitWord(v.Target, sep)
 			t.Columns[i] = c
 		}
 
-		getCondition(&t.JoinOn.Origin, &t.JoinOn.Diff, v.JoinOn, sep)
-		getCondition(&t.Where.Origin, &t.Where.Diff, v.Where, sep)
+		t.JoinOn.Origin, t.JoinOn.Diff = getCondition(v.JoinOn, sep)
+		t.Where.Origin, t.Where.Diff = getCondition(v.Where, sep)
 
 		tables[i] = t
 	}
@@ -101,7 +88,7 @@ func getInnerJoinQuery(ins *Instance, i int) string {
 	return q
 }
 
-func getCondition(origin, diff *string, c []*my.Condition, sep string) {
+func getCondition(c []*my.Condition, sep string) (o, d string) {
 	for i, v := range c {
 		isAnd := 0 < len(v.And)
 		if 0 < i {
@@ -111,26 +98,26 @@ func getCondition(origin, diff *string, c []*my.Condition, sep string) {
 			} else {
 				p = " OR "
 			}
-
-			*origin += p
-			*diff += p
+			o, d = o+p, d+p
 		}
 
-		var o, d string
+		var s string
 		if isAnd {
-			if s := strings.Split(v.And, sep); 1 < len(s) {
-				o, d = s[0], s[1]
-			} else {
-				o, d = v.And, v.And
-			}
+			s = v.And
 		} else {
-			if s := strings.Split(v.Or, sep); 1 < len(s) {
-				o, d = s[0], s[1]
-			} else {
-				o, d = v.Or, v.Or
-			}
+			s = v.Or
 		}
-		*origin += o
-		*diff += d
+		t, u := splitWord(s, sep)
+		o, d = o+t, d+u
 	}
+	return
+}
+
+func splitWord(w, sep string) (o, d string) {
+	if s := strings.Split(w, sep); 1 < len(s) {
+		o, d = s[0], s[1]
+	} else {
+		o, d = w, w
+	}
+	return
 }
