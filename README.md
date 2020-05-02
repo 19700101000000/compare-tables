@@ -17,7 +17,7 @@ database: <DATABASE_NAME>
 
 ### *.yml
 ```
-- table: <TGT1_TABLE_NAME>:<TGT2_TABLE_NAME> | <TABLE_NAME>
+- table: <TGT1_TABLE_NAME>[ <OMIT_NAME>]:<TGT2_TABLE_NAME>[ <OMIT_NAME>] | <TABLE_NAME>
   columns:
     - target: <TGT1_COLUMN_NAME>:<TGT2_COLUMN_NAME> | <COLUMN_NAME>
       [disable_match: true | false]

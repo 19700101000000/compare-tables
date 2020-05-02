@@ -39,51 +39,56 @@ func getSrcName(env my.Env) string {
 	)
 }
 
-func getData(data []*my.Table) []*Table {
-	tables := make([]*Table, len(data))
+func getData(data []*my.Table) []*Query {
+	queries := make([]*Query, len(data))
+	sep := ":"
 	for i, v := range data {
-		sep := ":"
-		t := &Table{
+		q := &Query{
 			Columns: make([]*Column, len(v.Columns)),
 		}
-		t.Origin, t.Diff = splitWord(v.Table, sep)
+		o, d := splitWord(v.Table, sep)
+		s := " "
+		q.Origin, q.Omit.Origin = splitWord(o, s)
+		q.Diff, q.Omit.Diff = splitWord(d, s)
 
 		for i, v := range v.Columns {
 			c := &Column{
 				DisableMatch: v.DisableMatch,
 			}
 			c.Origin, c.Diff = splitWord(v.Target, sep)
-			t.Columns[i] = c
+			q.Columns[i] = c
 		}
 
-		t.JoinOn.Origin, t.JoinOn.Diff = getCondition(v.JoinOn, sep)
-		t.Where.Origin, t.Where.Diff = getCondition(v.Where, sep)
+		q.JoinOn.Origin, q.JoinOn.Diff = getCondition(v.JoinOn, sep)
+		q.Where.Origin, q.Where.Diff = getCondition(v.Where, sep)
 
-		tables[i] = t
+		queries[i] = q
 	}
 
-	return tables
+	return queries
 }
 
 func getInnerJoinQuery(ins *Instance, i int) string {
-	t := ins.Data[i]
-	cols := make([]string, len(t.Columns)*2)
-	for i := range t.Columns {
-		c := t.Columns[i]
+	d := ins.Data[i]
+	cols := make([]string, len(d.Columns)*2)
+	for i := range d.Columns {
+		c := d.Columns[i]
 		s := "%s.%s"
 
 		i *= 2
-		cols[i] = fmt.Sprintf(s, t.Origin, c.Origin)
-		cols[i+1] = fmt.Sprintf(s, t.Diff, c.Diff)
+		cols[i] = fmt.Sprintf(s, d.Omit.Origin, c.Origin)
+		cols[i+1] = fmt.Sprintf(s, d.Omit.Diff, c.Diff)
 	}
 
 	q := fmt.Sprintf(
-		"SELECT %s FROM %s INNER JOIN %s ON %s WHERE %s",
+		"SELECT %s FROM %s %s INNER JOIN %s %s ON %s WHERE %s",
 		strings.Join(cols, ", "),
-		t.Origin,
-		t.Diff,
-		t.JoinOn.Origin,
-		t.Where.Origin,
+		d.Origin,
+		d.Omit.Origin,
+		d.Diff,
+		d.Omit.Diff,
+		d.JoinOn.Origin,
+		d.Where.Origin,
 	)
 	return q
 }

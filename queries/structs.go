@@ -6,15 +6,21 @@ type Target struct {
 	Diff   string
 }
 
+// Table Table info
+type Table struct {
+	Target
+	Omit Target
+}
+
 // Column column info
 type Column struct {
 	Target
 	DisableMatch bool
 }
 
-// Table target table
-type Table struct {
-	Target
+// Query query info
+type Query struct {
+	Table
 	Columns []*Column
 	JoinOn  Target
 	Where   Target

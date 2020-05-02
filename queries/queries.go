@@ -27,7 +27,7 @@ const (
 // Instance struct
 type Instance struct {
 	DB   *sql.DB
-	Data []*Table
+	Data []*Query
 }
 
 // GetInstance do first
@@ -95,10 +95,10 @@ func (ins *Instance) RunCompare() {
 }
 
 func (ins *Instance) getCountOrigin(i int) int {
-	t := ins.Data[i]
-	fmt.Println("count", t.Origin)
+	d := ins.Data[i]
+	fmt.Println("count", d.Origin)
 
-	q := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", t.Origin, t.Where.Origin)
+	q := fmt.Sprintf("SELECT COUNT(*) FROM %s %s WHERE %s", d.Origin, d.Omit.Origin, d.Where.Origin)
 	fmt.Printf("\t%s\t%s\n", tagSQL, q)
 
 	var c int
@@ -110,10 +110,10 @@ func (ins *Instance) getCountOrigin(i int) int {
 }
 
 func (ins *Instance) getCountDiff(i int) int {
-	t := ins.Data[i]
-	fmt.Println("count", t.Diff)
+	d := ins.Data[i]
+	fmt.Println("count", d.Diff)
 
-	q := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", t.Diff, t.Where.Diff)
+	q := fmt.Sprintf("SELECT COUNT(*) FROM %s %s WHERE %s", d.Diff, d.Omit.Diff, d.Where.Diff)
 	fmt.Printf("\t%s\t%s\n", tagSQL, q)
 
 	var c int
@@ -125,7 +125,7 @@ func (ins *Instance) getCountDiff(i int) int {
 }
 
 func (ins *Instance) getInnerJoin(i int) [][]sql.NullString {
-	t := ins.Data[i]
+	d := ins.Data[i]
 	fmt.Println("inner join")
 
 	q := getInnerJoinQuery(ins, i)
@@ -137,9 +137,9 @@ func (ins *Instance) getInnerJoin(i int) [][]sql.NullString {
 	}
 	defer rows.Close()
 
-	d := [][]sql.NullString{}
+	v := [][]sql.NullString{}
 	for rows.Next() {
-		l := len(t.Columns) * 2
+		l := len(d.Columns) * 2
 		r := make([]sql.NullString, l)
 		p := make([]interface{}, l)
 		for i := range r {
@@ -149,28 +149,28 @@ func (ins *Instance) getInnerJoin(i int) [][]sql.NullString {
 		if err != nil {
 			panic(err)
 		}
-		d = append(d, r)
+		v = append(v, r)
 	}
-	fmt.Printf("\t%s\t%d\n", tagCnt, len(d))
-	return d
+	fmt.Printf("\t%s\t%d\n", tagCnt, len(v))
+	return v
 }
 
 func (ins *Instance) getInnerJoinWithMatch(i int) [][]sql.NullString {
-	t := ins.Data[i]
+	data := ins.Data[i]
 	fmt.Println("inner join with match")
 
 	q := getInnerJoinQuery(ins, i)
-	for _, v := range t.Columns {
+	for _, v := range data.Columns {
 		if v.DisableMatch {
 			continue
 		}
 
-		if 0 < len(t.Where.Origin) {
+		if 0 < len(data.Where.Origin) {
 			q += " AND "
 		}
 		s := "%s.%s"
-		o := fmt.Sprintf(s, t.Origin, v.Origin)
-		d := fmt.Sprintf(s, t.Diff, v.Diff)
+		o := fmt.Sprintf(s, data.Omit.Origin, v.Origin)
+		d := fmt.Sprintf(s, data.Omit.Diff, v.Diff)
 		q += fmt.Sprintf("((%s IS NULL AND %s IS NULL) OR %s = %s)", o, d, o, d)
 	}
 	fmt.Printf("\t%s\t%s\n", tagSQL, q)
@@ -183,7 +183,7 @@ func (ins *Instance) getInnerJoinWithMatch(i int) [][]sql.NullString {
 
 	d := [][]sql.NullString{}
 	for rows.Next() {
-		l := len(t.Columns) * 2
+		l := len(data.Columns) * 2
 		r := make([]sql.NullString, l)
 		p := make([]interface{}, l)
 		for i := range r {
