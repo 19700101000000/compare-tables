@@ -1,15 +1,31 @@
 package queries
 
 import (
+	"compare-tables/types"
 	my "compare-tables/yaml"
 	"fmt"
 	"strings"
 )
 
+func getEnvs(env my.Env) (origin, diff my.Env) {
+	sep := ":"
+
+	od, dd := splitWord(string(env.Driver), sep)
+	origin.Driver = types.Driver(od)
+	diff.Driver = types.Driver(dd)
+	origin.Host, diff.Host = splitWord(env.Host, sep)
+	origin.Port, diff.Port = splitWord(env.Port, sep)
+	origin.User, diff.User = splitWord(env.User, sep)
+	origin.Pass, diff.Pass = splitWord(env.Pass, sep)
+	origin.DB, diff.DB = splitWord(env.DB, sep)
+
+	return
+}
+
 func getSrcName(env my.Env) string {
 	if env.Driver == driverPsql {
 		return fmt.Sprintf(
-			"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+			"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 			env.Host,
 			env.Port,
 			env.User,
@@ -20,7 +36,7 @@ func getSrcName(env my.Env) string {
 
 	if env.Driver == driverMysql {
 		return fmt.Sprintf(
-			"%s:%s@tcp(%s:%d)/%s",
+			"%s:%s@tcp(%s:%s)/%s",
 			env.User,
 			env.Pass,
 			env.Host,
@@ -37,6 +53,7 @@ func getSrcName(env my.Env) string {
 			driverPsql,
 		),
 	)
+
 }
 
 func getData(data []*my.Table) []*Query {

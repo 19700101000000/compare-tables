@@ -1,13 +1,18 @@
 package yaml
 
+import (
+	"compare-tables/types"
+)
+
 // Env env.yml's struct
 type Env struct {
-	Driver string `yaml:"driver"`
-	Host   string `yaml:"host"`
-	Port   int    `yaml:"port"`
-	User   string `yaml:"username"`
-	Pass   string `yaml:"password"`
-	DB     string `yaml:"database"`
+	Driver  types.Driver `yaml:"driver"`
+	Host    string       `yaml:"host"`
+	Port    string       `yaml:"port"`
+	User    string       `yaml:"username"`
+	Pass    string       `yaml:"password"`
+	DB      string       `yaml:"database"`
+	NotSame bool         `yaml:"not_same"`
 }
 
 // Condition use sql-condition

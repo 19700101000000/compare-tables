@@ -1,6 +1,7 @@
 package queries
 
 import (
+	"compare-tables/types"
 	my "compare-tables/yaml"
 	"database/sql"
 	"fmt"
@@ -11,10 +12,9 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// sql drivers
 const (
-	driverPsql  = "postgres"
-	driverMysql = "mysql"
+	driverPsql  types.Driver = "postgres"
+	driverMysql types.Driver = "mysql"
 )
 
 // tag heads
@@ -26,32 +26,60 @@ const (
 
 // Instance struct
 type Instance struct {
-	DB   *sql.DB
-	Data []*Query
+	DB     *sql.DB
+	DiffDB *sql.DB
+	Data   []*Query
 }
 
 // GetInstance do first
 func GetInstance(env my.Env) *Instance {
-	src := getSrcName(env)
+	o, d := getEnvs(env)
+	fmt.Println(o)
+	fmt.Println(d)
 
-	db, err := sql.Open(env.Driver, src)
+	src := getSrcName(o)
+	db, err := sql.Open(string(o.Driver), src)
 	if err != nil {
 		panic(
-			fmt.Sprintf("coannot open %s: %v", env.Driver, err),
+			fmt.Sprintf("coannot open %s: %v", o.Driver, err),
 		)
 	}
+	var diffDb *sql.DB
+	if env.NotSame {
+		src = getSrcName(d)
+		diffDb, err = sql.Open(string(d.Driver), src)
+		if err != nil {
+			panic(
+				fmt.Sprintf("coannot open %s: %v", d.Driver, err),
+			)
+		}
+	}
 	return &Instance{
-		DB: db,
+		DB:     db,
+		DiffDB: diffDb,
 	}
 }
 
 // Close set defer
 func (ins *Instance) Close() {
-	ins.DB.Close()
+	if ins == nil {
+		return
+	}
+
+	if ins.DB != nil {
+		ins.DB.Close()
+	}
+	if ins.DiffDB != nil {
+		ins.DiffDB.Close()
+	}
 }
 
 // Init init instance
 func (ins *Instance) Init(data []*my.Table) {
+	if ins == nil {
+		return
+	}
+
 	err := ins.DB.Ping()
 	if err != nil {
 		panic(
@@ -65,6 +93,9 @@ func (ins *Instance) Init(data []*my.Table) {
 
 // RunCompare do compare
 func (ins *Instance) RunCompare() {
+	if ins == nil {
+		return
+	}
 	matchAll, resultsMatch := true, ""
 
 	for i, v := range ins.Data {
@@ -95,6 +126,9 @@ func (ins *Instance) RunCompare() {
 }
 
 func (ins *Instance) getCountOrigin(i int) int {
+	if ins == nil {
+		return 0
+	}
 	d := ins.Data[i]
 	fmt.Println("count", d.Origin)
 
@@ -110,6 +144,9 @@ func (ins *Instance) getCountOrigin(i int) int {
 }
 
 func (ins *Instance) getCountDiff(i int) int {
+	if ins == nil {
+		return 0
+	}
 	d := ins.Data[i]
 	fmt.Println("count", d.Diff)
 
@@ -125,6 +162,9 @@ func (ins *Instance) getCountDiff(i int) int {
 }
 
 func (ins *Instance) getInnerJoin(i int) [][]sql.NullString {
+	if ins == nil {
+		return nil
+	}
 	d := ins.Data[i]
 	fmt.Println("inner join")
 
@@ -156,6 +196,9 @@ func (ins *Instance) getInnerJoin(i int) [][]sql.NullString {
 }
 
 func (ins *Instance) getInnerJoinWithMatch(i int) [][]sql.NullString {
+	if ins == nil {
+		return nil
+	}
 	data := ins.Data[i]
 	fmt.Println("inner join with match")
 
