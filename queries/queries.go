@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 
 	// sql drivers
 	_ "github.com/go-sql-driver/mysql"
@@ -34,7 +35,13 @@ type Instance struct {
 // QueryResult in query result
 type QueryResult struct {
 	Header []string
-	Data   []map[string]sql.NullString
+	Data   [][]sql.NullString
+}
+
+// CheckResult check queries
+type CheckResult struct {
+	Match      map[int][]int
+	IsMatchAll bool
 }
 
 // GetInstance do first
@@ -110,39 +117,54 @@ func (ins *Instance) RunCompare() {
 	if ins == nil {
 		return
 	}
-	matchAll, resultsMatch := true, ""
+	isMatchAll, results := true, ""
 
 	for i, v := range ins.Data {
 		fmt.Printf("----[%s:%s]----\n", v.Origin, v.Diff)
 
-		cntOrigin := ins.getCountOrigin(i)
-		cntDiff := ins.getCountDiff(i)
 		if ins.DiffDB == nil {
+			cntOrigin := ins.getCountOrigin(i)
+			cntDiff := ins.getCountDiff(i)
 			joinData := ins.getInnerJoin(i)
 			matchData := ins.getInnerJoinWithMatch(i)
 
 			cntJoin := len(joinData)
 			cntMatch := len(matchData)
-			isMatchAll := cntOrigin == cntDiff && cntOrigin == cntJoin && cntOrigin == cntMatch
-			resultsMatch += fmt.Sprintf(
+			isMatch := cntOrigin == cntDiff && cntOrigin == cntJoin && cntOrigin == cntMatch
+			results += fmt.Sprintf(
 				"\t[%s:%s]\t%v\n",
 				v.Origin,
 				v.Diff,
-				isMatchAll,
+				isMatch,
 			)
-			if matchAll {
-				matchAll = isMatchAll
+			if isMatchAll {
+				isMatchAll = isMatch
 			}
 		} else {
-			// TODO
+			o := ins.findOrigin(i)
+			d := ins.findDiff(i)
+			r := ins.checkResults(&o, &d, i)
+			results += fmt.Sprintf("%s:%s\n", v.Origin, v.Diff)
+			c := 0
+			for k := range r.Match {
+				c += len(r.Match[k])
+			}
+			results += fmt.Sprintf("\t%s\t%d\t%v\n", tagAll, c, r.IsMatchAll)
+			results += fmt.Sprintf(
+				"\t[%s]\t%d/%d\t%v",
+				v.Origin,
+				len(r.Match),
+				len(o.Data),
+				len(r.Match) == len(o.Data),
+			)
 		}
 	}
 	fmt.Println("----[results]----")
 	if ins.DiffDB == nil {
-		resultsMatch += fmt.Sprintf("\t%s\t%v\n", tagAll, matchAll)
-		fmt.Printf("match\n%s", resultsMatch)
+		results += fmt.Sprintf("\t%s\t%v\n", tagAll, isMatchAll)
+		fmt.Printf("match\n%s", results)
 	} else {
-		// TODO
+		fmt.Println(results)
 	}
 
 }
@@ -268,4 +290,159 @@ func (ins *Instance) getInnerJoinWithMatch(i int) [][]sql.NullString {
 	}
 	fmt.Printf("\t%s\t%d\n", tagCnt, len(d))
 	return d
+}
+
+func (ins *Instance) findOrigin(i int) QueryResult {
+	if ins == nil {
+		return QueryResult{}
+	}
+	d := ins.Data[i]
+	fmt.Println("find origin")
+
+	cs := make([]string, len(d.Columns))
+	for i, v := range d.Columns {
+		if v == nil {
+			continue
+		}
+		s := "%s.%s"
+		cs[i] = fmt.Sprintf(s, d.Omit.Origin, v.Origin)
+	}
+
+	q := fmt.Sprintf(
+		"SELECT %s FROM %s %s WHERE %s",
+		strings.Join(cs, ", "),
+		d.Origin,
+		d.Omit.Origin,
+		d.Where.Origin,
+	)
+	fmt.Printf("\t%s\t%s\n", tagSQL, q)
+
+	rows, err := ins.DB.Query(q)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	data := [][]sql.NullString{}
+	for rows.Next() {
+		l := len(cs)
+		r := make([]sql.NullString, l)
+		p := make([]interface{}, l)
+		for i := range r {
+			p[i] = &r[i]
+		}
+		err = rows.Scan(p...)
+		if err != nil {
+			panic(err)
+		}
+		data = append(data, r)
+	}
+	fmt.Printf("\t%s\t%d\n", tagCnt, len(data))
+
+	return QueryResult{
+		Header: cs,
+		Data:   data,
+	}
+}
+
+func (ins *Instance) findDiff(i int) QueryResult {
+	if ins == nil {
+		return QueryResult{}
+	}
+	d := ins.Data[i]
+	fmt.Println("find diff")
+
+	cs := make([]string, len(d.Columns))
+	for i, v := range d.Columns {
+		if v == nil {
+			continue
+		}
+		s := "%s.%s"
+		cs[i] = fmt.Sprintf(s, d.Omit.Diff, v.Diff)
+	}
+
+	q := fmt.Sprintf(
+		"SELECT %s FROM %s %s WHERE %s",
+		strings.Join(cs, ", "),
+		d.Diff,
+		d.Omit.Diff,
+		d.Where.Diff,
+	)
+	fmt.Printf("\t%s\t%s\n", tagSQL, q)
+
+	var (
+		rows *sql.Rows
+		err  error
+	)
+	if ins.DiffDB == nil {
+		rows, err = ins.DB.Query(q)
+
+	} else {
+		rows, err = ins.DiffDB.Query(q)
+	}
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	data := [][]sql.NullString{}
+	for rows.Next() {
+		l := len(cs)
+		r := make([]sql.NullString, l)
+		p := make([]interface{}, l)
+		for i := range r {
+			p[i] = &r[i]
+		}
+		err = rows.Scan(p...)
+		if err != nil {
+			panic(err)
+		}
+		data = append(data, r)
+	}
+	fmt.Printf("\t%s\t%d\n", tagCnt, len(data))
+
+	return QueryResult{
+		Header: cs,
+		Data:   data,
+	}
+}
+
+func (ins *Instance) checkResults(origin, diff *QueryResult, index int) CheckResult {
+	if ins == nil {
+		return CheckResult{}
+	}
+	d := ins.Data[index]
+
+	r := CheckResult{
+		Match:      make(map[int][]int),
+		IsMatchAll: true,
+	}
+
+	basicCnt := len(d.Columns)
+	for oy := range origin.Data {
+		isMatch := false
+		for dy := range diff.Data {
+			cnt := 0
+			for x := range d.Columns {
+				if c := d.Columns[x]; c.DisableMatch {
+					cnt++
+					continue
+				}
+				/* 前提: origin と diff は column と同じ数 & 順 */
+				o, d := origin.Data[oy][x], diff.Data[dy][x]
+				if (o.Valid || d.Valid) && o.String != d.String {
+					break
+				}
+				cnt++
+			}
+			if cnt == basicCnt {
+				isMatch = true
+				r.Match[oy] = append(r.Match[oy], dy)
+			}
+		}
+		if r.IsMatchAll {
+			r.IsMatchAll = isMatch
+		}
+	}
+	return r
 }
