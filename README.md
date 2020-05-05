@@ -7,24 +7,27 @@ compare 2 tables
 
 ### env.yml
 ```
-driver: mysql | postgres
-host: <HOST_NAME>
-port: <PORT_NUMBER>
-username: <USER_NAME>
-password: <USER_PASSWORD>
-database: <DATABASE_NAME>
+driver: <DRIVER_NAME>[:<DRIVER_NAME_2>]
+host: <HOST_NAME>[:<HOST_NAME_2>]
+port: <PORT_NUMBER>[:<PORT_NUMBER_2>]
+username: <USER_NAME>[:<USER_NAME_2>]
+password: <USER_PASSWORD>[:<USER_PASSWORD_2>]
+database: <DATABASE_NAME>[:<DATABASE_NAME_2>]
+[not_same: true | false]
 ```
+
+#### Driver Name
+- mysql
+- postgres
 
 ### *.yml
 ```
-- table: <TGT1_TABLE_NAME>[ <OMIT_NAME>]:<TGT2_TABLE_NAME>[ <OMIT_NAME>] | <TABLE_NAME>
+- table: <TABLE_NAME>[ <OMIT_NAME>][:<TABLE_NAME_2>[ <OMIT_NAME_2>]]
   columns:
-    - target: <TGT1_COLUMN_NAME>:<TGT2_COLUMN_NAME> | <COLUMN_NAME>
+    - target: <COLUMN_NAME>[:<COLUMN_NAME_2>]
       [disable_match: true | false]
   join_on:
-    - and: <TGT1_JOIN_CONDITION>:<TGT2_JOIN_CONDITION> | <JOIN_CONDITION>
-      | or: <TGT1_JOIN_CONDITION>:<TGT2_JOIN_CONDITION> | <JOIN_CONDITION>
+    - and | or: <JOIN_CONDITION>[:<JOIN_CONDITION_2>]
   where:
-    - and: <TGT1_WHERE_CONDITION>:<TGT2_WHERE_CONDITION> | <WHERE_CONDITION>
-      | or: <TGT1_WHERE_CONDITION>:<TGT2_WHERE_CONDITION> | <WHERE_CONDITION>
+    - and | or: <WHERE_CONDITION>[:<WHERE_CONDITION_2>]
 ```

@@ -31,11 +31,15 @@ type Instance struct {
 	Data   []*Query
 }
 
+// QueryResult in query result
+type QueryResult struct {
+	Header []string
+	Data   []map[string]sql.NullString
+}
+
 // GetInstance do first
 func GetInstance(env my.Env) *Instance {
 	o, d := getEnvs(env)
-	fmt.Println(o)
-	fmt.Println(d)
 
 	src := getSrcName(o)
 	db, err := sql.Open(string(o.Driver), src)
@@ -80,13 +84,23 @@ func (ins *Instance) Init(data []*my.Table) {
 		return
 	}
 
-	err := ins.DB.Ping()
-	if err != nil {
-		panic(
-			fmt.Sprintf("cannot connect db: %v", err),
-		)
+	if ins.DB != nil {
+		if err := ins.DB.Ping(); err != nil {
+			panic(
+				fmt.Sprintf("cannot connect 1st db: %v", err),
+			)
+		}
+		log.Printf("1st db connection ok.")
 	}
-	log.Println("db connection ok.")
+
+	if ins.DiffDB != nil {
+		if err := ins.DiffDB.Ping(); err != nil {
+			panic(
+				fmt.Sprintf("cannot connect 2nd db: %v", err),
+			)
+		}
+		log.Printf("2nd db connection ok.")
+	}
 
 	ins.Data = getData(data)
 }
@@ -103,26 +117,34 @@ func (ins *Instance) RunCompare() {
 
 		cntOrigin := ins.getCountOrigin(i)
 		cntDiff := ins.getCountDiff(i)
-		joinData := ins.getInnerJoin(i)
-		matchData := ins.getInnerJoinWithMatch(i)
+		if ins.DiffDB == nil {
+			joinData := ins.getInnerJoin(i)
+			matchData := ins.getInnerJoinWithMatch(i)
 
-		cntJoin := len(joinData)
-		cntMatch := len(matchData)
-		isMatchAll := cntOrigin == cntDiff && cntOrigin == cntJoin && cntOrigin == cntMatch
-		resultsMatch += fmt.Sprintf(
-			"\t[%s:%s]\t%v\n",
-			v.Origin,
-			v.Diff,
-			isMatchAll,
-		)
-		if matchAll {
-			matchAll = isMatchAll
+			cntJoin := len(joinData)
+			cntMatch := len(matchData)
+			isMatchAll := cntOrigin == cntDiff && cntOrigin == cntJoin && cntOrigin == cntMatch
+			resultsMatch += fmt.Sprintf(
+				"\t[%s:%s]\t%v\n",
+				v.Origin,
+				v.Diff,
+				isMatchAll,
+			)
+			if matchAll {
+				matchAll = isMatchAll
+			}
+		} else {
+			// TODO
 		}
 	}
-	resultsMatch += fmt.Sprintf("\t%s\t%v\n", tagAll, matchAll)
-
 	fmt.Println("----[results]----")
-	fmt.Printf("match\n%s", resultsMatch)
+	if ins.DiffDB == nil {
+		resultsMatch += fmt.Sprintf("\t%s\t%v\n", tagAll, matchAll)
+		fmt.Printf("match\n%s", resultsMatch)
+	} else {
+		// TODO
+	}
+
 }
 
 func (ins *Instance) getCountOrigin(i int) int {
@@ -154,8 +176,14 @@ func (ins *Instance) getCountDiff(i int) int {
 	fmt.Printf("\t%s\t%s\n", tagSQL, q)
 
 	var c int
-	if err := ins.DB.QueryRow(q).Scan(&c); err != nil {
-		panic(err)
+	if ins.DiffDB != nil {
+		if err := ins.DiffDB.QueryRow(q).Scan(&c); err != nil {
+			panic(err)
+		}
+	} else {
+		if err := ins.DB.QueryRow(q).Scan(&c); err != nil {
+			panic(err)
+		}
 	}
 	fmt.Printf("\t%s\t%d\n", tagCnt, c)
 	return c
