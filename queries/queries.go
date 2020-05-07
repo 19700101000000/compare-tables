@@ -151,7 +151,7 @@ func (ins *Instance) RunCompare() {
 			}
 			results += fmt.Sprintf("\t%s\t%d\t%v\n", tagAll, c, r.IsMatchAll)
 			results += fmt.Sprintf(
-				"\t[%s]\t%d/%d\t%v",
+				"\t[%s]\t%d/%d\t%v\n",
 				v.Origin,
 				len(r.Match),
 				len(o.Data),
