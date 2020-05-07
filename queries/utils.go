@@ -62,6 +62,7 @@ func getData(data []*my.Table) []*Query {
 	for i, v := range data {
 		q := &Query{
 			Columns: make([]*Column, len(v.Columns)),
+			GroupBy: make([]*Target, len(v.GroupBy)),
 		}
 		o, d := splitWord(v.Table, sep)
 		s := " "
@@ -77,19 +78,10 @@ func getData(data []*my.Table) []*Query {
 			q.Columns[i] = c
 		}
 
-		if l := len(v.GroupBy); l > 0 {
-			s := " GROUP BY "
-			q.GroupBy.Origin = s
-			q.GroupBy.Diff = s
-			for i, g := range v.GroupBy {
-				if i > 0 {
-					q.GroupBy.Origin += ", "
-					q.GroupBy.Diff += ", "
-				}
-				o, d := splitWord(g, sep)
-				q.GroupBy.Origin += fmt.Sprintf("%s.%s", q.Origin, o)
-				q.GroupBy.Diff += fmt.Sprintf("%s.%s", q.Diff, d)
-			}
+		s = "%s.%s"
+		for i, g := range v.GroupBy {
+			o, d := splitWord(g, sep)
+			q.GroupBy[i] = &Target{o, d}
 		}
 
 		q.JoinOn.Origin, q.JoinOn.Diff = getCondition(v.JoinOn, sep)

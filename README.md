@@ -1,9 +1,11 @@
 # Compare Tables
 
+to use wiki.
+
 ## Goal
 compare 2 tables
 
-## Spec
+## Syntax
 
 ### env.yml
 ```
@@ -31,4 +33,6 @@ database: <DATABASE_NAME>[:<DATABASE_NAME_2>]
     - and | or: <JOIN_CONDITION>[:<JOIN_CONDITION_2>]
   where:
     - and | or: <WHERE_CONDITION>[:<WHERE_CONDITION_2>]
+  order_by:
+    - <COLUMN_NAME>
 ```

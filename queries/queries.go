@@ -319,7 +319,7 @@ func (ins *Instance) findOrigin(i int) QueryResult {
 		d.Origin,
 		d.Omit.Origin,
 		d.Where.Origin,
-		d.GroupBy.Origin,
+		d.GetGroupByOrigin(),
 	)
 	fmt.Printf("\t%s\t%s\n", tagSQL, q)
 
@@ -376,7 +376,7 @@ func (ins *Instance) findDiff(i int) QueryResult {
 		d.Diff,
 		d.Omit.Diff,
 		d.Where.Diff,
-		d.GroupBy.Diff,
+		d.GetGroupByDiff(),
 	)
 	fmt.Printf("\t%s\t%s\n", tagSQL, q)
 

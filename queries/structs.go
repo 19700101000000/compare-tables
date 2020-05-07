@@ -1,5 +1,9 @@
 package queries
 
+import (
+	"fmt"
+)
+
 // Target datatype
 type Target struct {
 	Origin string
@@ -25,5 +29,49 @@ type Query struct {
 	Columns []*Column
 	JoinOn  Target
 	Where   Target
-	GroupBy Target
+	GroupBy []*Target
+}
+
+// GetGroupByOrigin get string group by
+func (q *Query) GetGroupByOrigin() string {
+	if q == nil {
+		return ""
+	}
+	var groupby string
+	if l := len(q.GroupBy); l > 0 {
+		groupby = " GROUP BY "
+		for i, g := range q.GroupBy {
+			if g == nil {
+				continue
+			}
+
+			if i > 0 {
+				groupby += ", "
+			}
+			groupby += fmt.Sprintf("%s.%s", q.Omit.Origin, g.Origin)
+		}
+	}
+	return groupby
+}
+
+// GetGroupByDiff get string group by
+func (q *Query) GetGroupByDiff() string {
+	if q == nil {
+		return ""
+	}
+	var groupby string
+	if l := len(q.GroupBy); l > 0 {
+		groupby = " GROUP BY "
+		for i, g := range q.GroupBy {
+			if g == nil {
+				continue
+			}
+
+			if i > 0 {
+				groupby += ", "
+			}
+			groupby += fmt.Sprintf("%s.%s", q.Omit.Diff, g.Diff)
+		}
+	}
+	return groupby
 }
