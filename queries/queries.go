@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	// sql drivers
 	_ "github.com/go-sql-driver/mysql"
@@ -119,6 +120,7 @@ func (ins *Instance) RunCompare() {
 	}
 	isMatchAll, results := true, ""
 
+	fmt.Printf("[%s]\n", time.Now())
 	for i, v := range ins.Data {
 		fmt.Printf("----[%s:%s]----\n", v.Origin, v.Diff)
 
@@ -297,7 +299,7 @@ func (ins *Instance) findOrigin(i int) QueryResult {
 		return QueryResult{}
 	}
 	d := ins.Data[i]
-	fmt.Println("find origin")
+	fmt.Println("find", d.Origin)
 
 	cs := make([]string, len(d.Columns))
 	for i, v := range d.Columns {
@@ -305,6 +307,9 @@ func (ins *Instance) findOrigin(i int) QueryResult {
 			continue
 		}
 		s := "%s.%s"
+		if v.Distinct {
+			s = "DISTINCT " + s
+		}
 		cs[i] = fmt.Sprintf(s, d.Omit.Origin, v.Origin)
 	}
 
@@ -350,7 +355,7 @@ func (ins *Instance) findDiff(i int) QueryResult {
 		return QueryResult{}
 	}
 	d := ins.Data[i]
-	fmt.Println("find diff")
+	fmt.Println("find", d.Diff)
 
 	cs := make([]string, len(d.Columns))
 	for i, v := range d.Columns {
@@ -358,6 +363,9 @@ func (ins *Instance) findDiff(i int) QueryResult {
 			continue
 		}
 		s := "%s.%s"
+		if v.Distinct {
+			s = "DISTINCT " + s
+		}
 		cs[i] = fmt.Sprintf(s, d.Omit.Diff, v.Diff)
 	}
 

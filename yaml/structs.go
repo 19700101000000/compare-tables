@@ -25,6 +25,7 @@ type Condition struct {
 type Column struct {
 	Target       string `yaml:"target"`
 	DisableMatch bool   `yaml:"disable_match"`
+	Distinct     bool   `yaml:"distinct"`
 }
 
 // Table any.yml's struct

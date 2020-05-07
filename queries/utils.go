@@ -71,6 +71,7 @@ func getData(data []*my.Table) []*Query {
 		for i, v := range v.Columns {
 			c := &Column{
 				DisableMatch: v.DisableMatch,
+				Distinct:     v.Distinct,
 			}
 			c.Origin, c.Diff = splitWord(v.Target, sep)
 			q.Columns[i] = c
@@ -91,6 +92,10 @@ func getInnerJoinQuery(ins *Instance, i int) string {
 	for i := range d.Columns {
 		c := d.Columns[i]
 		s := "%s.%s"
+
+		if c.Distinct {
+			s = "DISTINCT " + s
+		}
 
 		i *= 2
 		cols[i] = fmt.Sprintf(s, d.Omit.Origin, c.Origin)

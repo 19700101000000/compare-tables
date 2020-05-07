@@ -16,6 +16,7 @@ type Table struct {
 type Column struct {
 	Target
 	DisableMatch bool
+	Distinct     bool
 }
 
 // Query query info

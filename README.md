@@ -26,6 +26,7 @@ database: <DATABASE_NAME>[:<DATABASE_NAME_2>]
   columns:
     - target: <COLUMN_NAME>[:<COLUMN_NAME_2>]
       [disable_match: true | false]
+      [distinct: true | false[:true | false]]
   join_on:
     - and | or: <JOIN_CONDITION>[:<JOIN_CONDITION_2>]
   where:
