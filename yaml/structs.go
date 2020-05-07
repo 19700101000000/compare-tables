@@ -34,4 +34,5 @@ type Table struct {
 	Columns []*Column    `yaml:"columns"`
 	JoinOn  []*Condition `yaml:"join_on"`
 	Where   []*Condition `yaml:"where"`
+	GroupBy []string     `yaml:"group_by"`
 }

@@ -314,11 +314,12 @@ func (ins *Instance) findOrigin(i int) QueryResult {
 	}
 
 	q := fmt.Sprintf(
-		"SELECT %s FROM %s %s WHERE %s",
+		"SELECT %s FROM %s %s WHERE %s%s",
 		strings.Join(cs, ", "),
 		d.Origin,
 		d.Omit.Origin,
 		d.Where.Origin,
+		d.GroupBy.Origin,
 	)
 	fmt.Printf("\t%s\t%s\n", tagSQL, q)
 
@@ -370,11 +371,12 @@ func (ins *Instance) findDiff(i int) QueryResult {
 	}
 
 	q := fmt.Sprintf(
-		"SELECT %s FROM %s %s WHERE %s",
+		"SELECT %s FROM %s %s WHERE %s%s",
 		strings.Join(cs, ", "),
 		d.Diff,
 		d.Omit.Diff,
 		d.Where.Diff,
+		d.GroupBy.Diff,
 	)
 	fmt.Printf("\t%s\t%s\n", tagSQL, q)
 

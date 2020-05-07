@@ -25,4 +25,5 @@ type Query struct {
 	Columns []*Column
 	JoinOn  Target
 	Where   Target
+	GroupBy Target
 }
