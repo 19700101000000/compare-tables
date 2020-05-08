@@ -21,6 +21,7 @@ type Column struct {
 	Target
 	DisableMatch bool
 	Distinct     bool
+	IsRaw        bool
 }
 
 // Query query info

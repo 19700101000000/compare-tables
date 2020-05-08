@@ -306,11 +306,18 @@ func (ins *Instance) findOrigin(i int) QueryResult {
 		if v == nil {
 			continue
 		}
-		s := "%s.%s"
+
+		var s string
 		if v.Distinct {
-			s = "DISTINCT " + s
+			s = "DISTINCT "
 		}
-		cs[i] = fmt.Sprintf(s, d.Omit.Origin, v.Origin)
+		if v.IsRaw {
+			s += "%s"
+			cs[i] = fmt.Sprintf(s, v.Origin)
+		} else {
+			s += "%s.%s"
+			cs[i] = fmt.Sprintf(s, d.Omit.Origin, v.Origin)
+		}
 	}
 
 	q := fmt.Sprintf(
@@ -363,11 +370,17 @@ func (ins *Instance) findDiff(i int) QueryResult {
 		if v == nil {
 			continue
 		}
-		s := "%s.%s"
+		var s string
 		if v.Distinct {
-			s = "DISTINCT " + s
+			s = "DISTINCT "
 		}
-		cs[i] = fmt.Sprintf(s, d.Omit.Diff, v.Diff)
+		if v.IsRaw {
+			s += "%s"
+			cs[i] = fmt.Sprintf(s, v.Diff)
+		} else {
+			s += "%s.%s"
+			cs[i] = fmt.Sprintf(s, d.Omit.Diff, v.Diff)
+		}
 	}
 
 	q := fmt.Sprintf(
