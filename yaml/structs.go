@@ -4,36 +4,59 @@ import (
 	"compare-tables/types"
 )
 
-// Env env.yml's struct
+// Env type
 type Env struct {
-	Driver  types.Driver `yaml:"driver"`
-	Host    string       `yaml:"host"`
-	Port    string       `yaml:"port"`
-	User    string       `yaml:"username"`
-	Pass    string       `yaml:"password"`
-	DB      string       `yaml:"database"`
-	NotSame bool         `yaml:"not_same"`
+	Driver types.Driver `yaml:"driver"`
+	Host   string       `yaml:"host"`
+	Port   string       `yaml:"port"`
+	User   string       `yaml:"username"`
+	Pass   string       `yaml:"password"`
+	DB     string       `yaml:"database"`
 }
 
-// Condition use sql-condition
+// Condition type
 type Condition struct {
-	And string `yaml:"and"`
-	Or  string `yaml:"or"`
+	And *string `yaml:"and"`
+	Or  *string `yaml:"or"`
 }
 
-// Column table's column
-type Column struct {
-	Target       string `yaml:"target"`
-	DisableMatch bool   `yaml:"disable_match"`
-	Distinct     bool   `yaml:"distinct"`
-	IsRaw        bool   `yaml:"is_raw"`
+// Join type
+type Join struct {
+	Name string       `yaml:"name"`
+	On   []*Condition `yaml:"on"`
 }
 
-// Table any.yml's struct
+// Table type
 type Table struct {
-	Table   string       `yaml:"table"`
-	Columns []*Column    `yaml:"columns"`
-	JoinOn  []*Condition `yaml:"join_on"`
+	Name    string       `yaml:"name"`
+	Joins   []*Join      `yaml:"joins"`
 	Where   []*Condition `yaml:"where"`
 	GroupBy []string     `yaml:"group_by"`
+}
+
+// Target type
+type Target struct {
+	Left  *string `yaml:"left"`
+	Right *string `yaml:"right"`
+}
+
+// Column type
+type Column struct {
+	Name       string  `yaml:"name"`
+	Join       *Target `yaml:"join"`
+	IsDistinct *string `yaml:"distinct"`
+	IsRaw      *string `yaml:"is_raw"`
+}
+
+// Compare type
+type Compare struct {
+	Columns []*Column `yaml:"columns"`
+	Left    Table     `yaml:"left"`
+	Right   Table     `yaml:"right"`
+}
+
+// File type
+type File struct {
+	Env      Env        `yaml:"env"`
+	Compares []*Compare `yaml:"compares"`
 }
