@@ -1,5 +1,9 @@
 package queries
 
+import (
+	"database/sql"
+)
+
 // Column type
 type Column struct {
 	Name string
@@ -20,4 +24,29 @@ type Table struct {
 	Joins    []*Join
 	Where    *string
 	GroupBy  *string
+}
+
+// Query query info
+type Query struct {
+	DB     *sql.DB
+	Tables []*Table
+}
+
+// Instance queries
+type Instance struct {
+	Left  Query
+	Right Query
+}
+
+// Info query result info
+type Info struct {
+	Query string
+	Data  [][]sql.NullString
+	Ok    bool
+}
+
+// Results queries results
+type Results struct {
+	Left  []Info
+	Right []Info
 }

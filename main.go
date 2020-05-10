@@ -37,5 +37,5 @@ func main() {
 	}
 	log.Println("db connection ok.")
 
-	// TODO: create query
+	ins.Exec()
 }

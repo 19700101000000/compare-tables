@@ -8,16 +8,6 @@ import (
 	"time"
 )
 
-type Query struct {
-	DB     *sql.DB
-	Tables []*Table
-}
-
-type Instance struct {
-	Left  Query
-	Right Query
-}
-
 // NewInstance is yaml.File to Instance
 func NewInstance(f *yaml.File) (*Instance, error) {
 	if f == nil {
@@ -61,6 +51,14 @@ func (ins *Instance) Ping() error {
 	} else if err2 != nil {
 		return err2
 	}
-
 	return nil
+}
+
+// Exec instance do
+func (ins *Instance) Exec() *Results {
+	if ins == nil {
+		return nil
+	}
+	return nil
+	// TODO: make this.
 }
