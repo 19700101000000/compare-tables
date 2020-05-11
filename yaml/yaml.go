@@ -168,8 +168,15 @@ func (col *Column) GetColumnName(tablename string, isLeft bool) string {
 		return ""
 	}
 
+	var name string
+	if l, r, _ := splitWord(col.Name, ":"); isLeft {
+		name = l
+	} else {
+		name = r
+	}
+
 	if GetBool(col.IsRaw, isLeft) {
-		return col.Name
+		return name
 	}
 
 	if col.Join != nil {
@@ -180,7 +187,7 @@ func (col *Column) GetColumnName(tablename string, isLeft bool) string {
 		}
 	}
 
-	name := fmt.Sprintf("%s.%s", tablename, col.Name)
+	name = fmt.Sprintf("%s.%s", tablename, name)
 	if GetBool(col.IsDistinct, isLeft) {
 		name = "DISTINCT " + name
 	}
@@ -283,7 +290,11 @@ func getCondition(cs []*Condition) *string {
 			continue
 		}
 		if i > 0 {
-			s += ", "
+			if v.And != nil {
+				s += " AND "
+			} else {
+				s += " OR "
+			}
 		}
 		if v.And != nil {
 			s += *v.And

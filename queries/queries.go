@@ -5,6 +5,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"log"
 	"time"
 )
 
@@ -64,18 +66,61 @@ func (ins *Instance) Exec() *Results {
 	go exec(chInfL, &ins.Left)
 	go serve(chL, chInfL)
 	go exec(chInfR, &ins.Right)
-	go serve(chw, chInfR)
+	go serve(chR, chInfR)
 	return &Results{
-		Left: <-chL,
+		Left:  <-chL,
 		Right: <-chR,
 	}
 }
 
+// Compare compare tables
+func (rs *Results) Compare() {
+	if rs == nil {
+		return
+	}
+
+	var max int
+	if l, r := len(rs.Left), len(rs.Right); l < r {
+		max = l
+	} else {
+		max = r
+	}
+	for i := 0; i < max; i++ {
+		l, r := rs.Left[i], rs.Right[i]
+		if l == nil || r == nil {
+			continue
+		}
+
+		var max int
+		if l, r := len(l.Data), len(r.Data); l < r {
+			max = l
+		} else {
+			max = r
+		}
+		for y := 0; y < max; y++ {
+			l, r := l.Data[y], r.Data[y]
+			var max int
+			if l, r := len(l), len(r); l < r {
+				max = l
+			} else {
+				max = r
+			}
+			for x := 0; x < max; x++ {
+				l, r := l[x], r[x]
+				ok := (!l.Valid && !r.Valid) || l.String == r.String
+				fmt.Println(ok)
+				// TODO: make this.
+			}
+			fmt.Println()
+		}
+	}
+}
+
 func serve(ch chan []*Info, chInf chan *Info) {
-	infos := make([]*Info)
+	infos := make([]*Info, 0)
 	for {
 		select {
-		case i, ok := <- chInf:
+		case i, ok := <-chInf:
 			if !ok {
 				ch <- infos
 				return
@@ -125,6 +170,36 @@ func exec(ch chan *Info, q *Query) {
 
 		if t.GroupBy != nil {
 			query += fmt.Sprintf(" GROUP BY %s", *t.GroupBy)
+		}
+
+		rows, err := q.DB.Query(query)
+		if err != nil {
+			log.Println(err)
+			ch <- &Info{
+				Query: query,
+			}
+			continue
+		}
+		defer rows.Close()
+		data := [][]sql.NullString{}
+		for rows.Next() {
+			l := len(t.Columns)
+			r := make([]sql.NullString, l)
+			p := make([]interface{}, l)
+			for i := range r {
+				p[i] = &r[i]
+			}
+			err = rows.Scan(p...)
+			if err != nil {
+				panic(err)
+			}
+			data = append(data, r)
+		}
+
+		ch <- &Info{
+			Query: query,
+			Data:  data,
+			Ok:    true,
 		}
 	}
 }
