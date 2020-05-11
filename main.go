@@ -37,5 +37,20 @@ func main() {
 	}
 	log.Println("db connection ok.")
 
-	ins.Exec()
+	rs := ins.Exec()
+	// TODO: make this.
+	if rs != nil {
+		for _, i := range rs.Left {
+			if i == nil {
+				continue
+				fmt.Println(i.Query)
+			}
+		}
+		for _, i := range rs.Right {
+			if i == nil {
+				continue
+				fmt.Println(i.Query)
+			}
+		}
+	}
 }

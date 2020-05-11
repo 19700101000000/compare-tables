@@ -47,6 +47,6 @@ type Info struct {
 
 // Results queries results
 type Results struct {
-	Left  []Info
-	Right []Info
+	Left  []*Info
+	Right []*Info
 }

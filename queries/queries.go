@@ -59,6 +59,72 @@ func (ins *Instance) Exec() *Results {
 	if ins == nil {
 		return nil
 	}
-	return nil
-	// TODO: make this.
+	chInfL, chInfR := make(chan *Info), make(chan *Info)
+	chL, chR := make(chan []*Info), make(chan []*Info)
+	go exec(chInfL, &ins.Left)
+	go serve(chL, chInfL)
+	go exec(chInfR, &ins.Right)
+	go serve(chw, chInfR)
+	return &Results{
+		Left: <-chL,
+		Right: <-chR,
+	}
+}
+
+func serve(ch chan []*Info, chInf chan *Info) {
+	infos := make([]*Info)
+	for {
+		select {
+		case i, ok := <- chInf:
+			if !ok {
+				ch <- infos
+				return
+			}
+			infos = append(infos, i)
+		}
+	}
+}
+
+func exec(ch chan *Info, q *Query) {
+	defer close(ch)
+	if q == nil {
+		return
+	}
+
+	for _, t := range q.Tables {
+		if t == nil || len(t.Columns) == 0 {
+			ch <- nil
+			continue
+		}
+
+		query := "SELECT "
+		for i, c := range t.Columns {
+			if c == nil {
+				continue
+			}
+			if i > 0 {
+				query += ", "
+			}
+			query += c.Name
+		}
+		query += fmt.Sprintf(" FROM %s %s", t.FullName, t.Name)
+
+		for _, j := range t.Joins {
+			if j == nil {
+				continue
+			}
+			query += fmt.Sprintf(" INNER JOIN %s %s", j.FullName, j.Name)
+			if j.On != nil {
+				query += fmt.Sprintf(" ON %s", *j.On)
+			}
+		}
+
+		if t.Where != nil {
+			query += fmt.Sprintf(" WHERE %s", *t.Where)
+		}
+
+		if t.GroupBy != nil {
+			query += fmt.Sprintf(" GROUP BY %s", *t.GroupBy)
+		}
+	}
 }
