@@ -51,6 +51,7 @@ type Column struct {
 
 // Compare type
 type Compare struct {
+	Label   string    `yaml:"label"`
 	Columns []*Column `yaml:"columns"`
 	Left    Table     `yaml:"left"`
 	Right   Table     `yaml:"right"`

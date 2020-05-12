@@ -65,6 +65,17 @@ func getTables(cmps []*yaml.Compare) (left, right []*Table) {
 	return
 }
 
+func getLabels(cmps []*yaml.Compare) []string {
+	if cmps == nil {
+		return nil
+	}
+	ls := make([]string, len(cmps))
+	for i := range cmps {
+		ls[i] = cmps[i].Label
+	}
+	return ls
+}
+
 func (t *Table) setJoins(js []*yaml.Join) {
 	if t == nil {
 		return

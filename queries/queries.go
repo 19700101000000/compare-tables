@@ -19,6 +19,7 @@ func NewInstance(f *yaml.File) (*Instance, error) {
 	ins := new(Instance)
 	ins.Left.DB, ins.Right.DB = getSqlDB(&f.Env)
 	ins.Left.Tables, ins.Right.Tables = getTables(f.Compares)
+	ins.Labels = getLabels(f.Compares)
 	return ins, nil
 }
 
@@ -68,8 +69,9 @@ func (ins *Instance) Exec() *Results {
 	go exec(chInfR, &ins.Right)
 	go serve(chR, chInfR)
 	return &Results{
-		Left:  <-chL,
-		Right: <-chR,
+		Labels: ins.Labels,
+		Left:   <-chL,
+		Right:  <-chR,
 	}
 }
 
@@ -88,7 +90,7 @@ func (rs *Results) Compare() {
 		max = r
 	}
 	for i := 0; i < max; i++ {
-		fmt.Println("-", i)
+		fmt.Println("-", i, rs.Labels[i])
 		l, r := rs.Left[i], rs.Right[i]
 		if l == nil || r == nil {
 			continue

@@ -35,8 +35,9 @@ type Query struct {
 
 // Instance queries
 type Instance struct {
-	Left  Query
-	Right Query
+	Labels []string
+	Left   Query
+	Right  Query
 }
 
 // Info query result info
@@ -48,6 +49,7 @@ type Info struct {
 
 // Results queries results
 type Results struct {
-	Left  []*Info
-	Right []*Info
+	Labels []string
+	Left   []*Info
+	Right  []*Info
 }
