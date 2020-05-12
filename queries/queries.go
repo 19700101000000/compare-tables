@@ -75,6 +75,8 @@ func (ins *Instance) Exec() *Results {
 
 // Compare compare tables
 func (rs *Results) Compare() {
+	fmt.Println("result start ---->>")
+	defer fmt.Println("<<---- end result")
 	if rs == nil {
 		return
 	}
@@ -90,6 +92,10 @@ func (rs *Results) Compare() {
 		if l == nil || r == nil {
 			continue
 		}
+		fmt.Printf("\t[SQL]\t%s\n", l.Query)
+		fmt.Printf("\t[CNT]\t%d\n", len(l.Data))
+		fmt.Printf("\t[SQL]\t%s\n", r.Query)
+		fmt.Printf("\t[CNT]\t%d\n", len(r.Data))
 
 		var max int
 		if l, r := len(l.Data), len(r.Data); l < r {
