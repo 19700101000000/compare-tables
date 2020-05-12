@@ -157,8 +157,18 @@ func (cmp *Compare) GetGroupBys() (left, right *string) {
 	if cmp == nil {
 		return
 	}
-	left = getGroupBy(cmp.Left.GroupBy)
-	right = getGroupBy(cmp.Right.GroupBy)
+	left = joinStrings(cmp.Left.GroupBy)
+	right = joinStrings(cmp.Right.GroupBy)
+	return
+}
+
+// GetOrderBys getting order-bys
+func (cmp *Compare) GetOrderBys() (left, right *string) {
+	if cmp == nil {
+		return
+	}
+	left = joinStrings(cmp.Left.OrderBy)
+	right = joinStrings(cmp.Right.OrderBy)
 	return
 }
 
@@ -234,7 +244,7 @@ func (j *Join) GetJoinOn() *string {
 	return getCondition(j.On)
 }
 
-func getGroupBy(s []string) *string {
+func joinStrings(s []string) *string {
 	if len(s) == 0 {
 		return nil
 	}

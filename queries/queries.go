@@ -206,6 +206,10 @@ func exec(ch chan *Info, q *Query) {
 			query += fmt.Sprintf(" GROUP BY %s", *t.GroupBy)
 		}
 
+		if t.OrderBy != nil {
+			query += fmt.Sprintf(" ORDER BY %s", *t.OrderBy)
+		}
+
 		rows, err := q.DB.Query(query)
 		if err != nil {
 			log.Println(err)

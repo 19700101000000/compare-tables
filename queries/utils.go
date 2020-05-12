@@ -55,6 +55,7 @@ func getTables(cmps []*yaml.Compare) (left, right []*Table) {
 		r.Name, r.FullName = cmp.GetRightTableNames()
 		l.Where, r.Where = cmp.GetWheres()
 		l.GroupBy, r.GroupBy = cmp.GetGroupBys()
+		l.OrderBy, r.OrderBy = cmp.GetOrderBys()
 		l.setColumns(cmp.Columns, true)
 		r.setColumns(cmp.Columns, false)
 		l.setJoins(cmp.Left.Joins)

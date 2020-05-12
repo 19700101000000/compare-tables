@@ -24,6 +24,7 @@ type Table struct {
 	Joins    []*Join
 	Where    *string
 	GroupBy  *string
+	OrderBy  *string
 }
 
 // Query query info

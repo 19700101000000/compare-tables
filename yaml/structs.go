@@ -32,6 +32,7 @@ type Table struct {
 	Joins   []*Join      `yaml:"joins"`
 	Where   []*Condition `yaml:"where"`
 	GroupBy []string     `yaml:"group_by"`
+	OrderBy []string     `yaml:"order_by"`
 }
 
 // Target type
