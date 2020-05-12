@@ -88,6 +88,7 @@ func (rs *Results) Compare() {
 		max = r
 	}
 	for i := 0; i < max; i++ {
+		fmt.Println("-", i)
 		l, r := rs.Left[i], rs.Right[i]
 		if l == nil || r == nil {
 			continue
@@ -103,6 +104,9 @@ func (rs *Results) Compare() {
 		} else {
 			max = r
 		}
+
+		var cnt, cntAll, cntY int
+		var failed string
 		for y := 0; y < max; y++ {
 			l, r := l.Data[y], r.Data[y]
 			var max int
@@ -111,14 +115,38 @@ func (rs *Results) Compare() {
 			} else {
 				max = r
 			}
+			var cntX int
 			for x := 0; x < max; x++ {
 				l, r := l[x], r[x]
-				ok := (!l.Valid && !r.Valid) || l.String == r.String
-				fmt.Println(ok)
-				// TODO: make this.
+				if ok := (!l.Valid && !r.Valid) || l.String == r.String; ok {
+					cntX++
+				} else {
+					var vl, vr string
+					if l.Valid {
+						vl = l.String
+					} else {
+						vl = "NULL"
+					}
+					if r.Valid {
+						vr = r.String
+					} else {
+						vr = "NULL"
+					}
+					failed += fmt.Sprintf("\t[%d:%d] %s <> %s", y, x, vl, vr)
+				}
 			}
-			fmt.Println()
+			if max == cntX {
+				cntY++
+			}
+			cnt += cntX
+			cntAll += max
 		}
+		if max == cntY {
+			fmt.Println("\t[RST]\tSUCCESS")
+		} else {
+			fmt.Printf("\t[RST]\tFAILED%s\n", failed)
+		}
+		fmt.Println("\t\tmatched", cnt, "/", cntAll)
 	}
 }
 
